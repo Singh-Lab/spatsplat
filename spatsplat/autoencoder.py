@@ -43,7 +43,9 @@ def evaluate_profile_autoencoder(
     *,
     batch_size: int = 512,
 ) -> dict[str, float | int]:
-    idx = idx.to(device=profiles.device)
+    profile_device = profiles.device
+    model_device = next(model.parameters()).device
+    idx = idx.to(device=profile_device)
     was_training = model.training
     model.eval()
     losses = []
@@ -53,7 +55,7 @@ def evaluate_profile_autoencoder(
     with torch.no_grad():
         for start in range(0, len(idx), batch_size):
             batch_idx = idx[start : start + batch_size]
-            batch_profiles = profiles[batch_idx]
+            batch_profiles = profiles[batch_idx].to(device=model_device)
             _, _, recon_profiles = model(batch_profiles)
             losses.append(profile_reconstruction_loss(batch_profiles, recon_profiles).item())
             maes.append((recon_profiles - batch_profiles).abs().mean(dim=1))
@@ -64,8 +66,8 @@ def evaluate_profile_autoencoder(
     if was_training:
         model.train()
 
-    mae_tensor = torch.cat(maes) if maes else torch.empty(0, device=profiles.device)
-    cosine_tensor = torch.cat(cosines) if cosines else torch.empty(0, device=profiles.device)
+    mae_tensor = torch.cat(maes) if maes else torch.empty(0, device=model_device)
+    cosine_tensor = torch.cat(cosines) if cosines else torch.empty(0, device=model_device)
     return {
         "loss": float(sum(losses) / len(losses)) if losses else float("nan"),
         "mae": float(mae_tensor.mean().item()) if len(mae_tensor) else float("nan"),
@@ -93,19 +95,20 @@ def train_profile_autoencoder(
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     history = {"train_loss": [], "val_loss": [], "val_mae": [], "val_cosine": []}
-    device = profiles.device
-    train_idx = train_idx.to(device=device)
-    val_idx = val_idx.to(device=device)
+    profile_device = profiles.device
+    model_device = next(model.parameters()).device
+    train_idx = train_idx.to(device=profile_device)
+    val_idx = val_idx.to(device=profile_device)
 
     for epoch in range(epochs):
         model.train()
-        perm = train_idx[torch.randperm(len(train_idx), device=device)]
+        perm = train_idx[torch.randperm(len(train_idx), device=profile_device)]
         running_loss = 0.0
         num_batches = 0
 
         for start in range(0, len(perm), batch_size):
             batch_idx = perm[start : start + batch_size]
-            batch_profiles = profiles[batch_idx]
+            batch_profiles = profiles[batch_idx].to(device=model_device)
             _, _, recon_profiles = model(batch_profiles)
             loss = profile_reconstruction_loss(batch_profiles, recon_profiles)
 
