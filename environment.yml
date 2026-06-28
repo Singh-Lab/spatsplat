@@ -1,0 +1,24 @@
+name: spatsplat
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pandas
+  - numpy
+  - scipy
+  - matplotlib
+  - seaborn
+  - python-dotenv
+  - pytorch::pytorch
+  - pytorch::pytorch-cuda=12.1
+  - pytorch::torchvision
+  - pip:
+      - scanpy
+      - squidpy
+      - napari[all]
+      - dask[complete]
+      - pyarrow
+      - fastparquet
+      - pillow
