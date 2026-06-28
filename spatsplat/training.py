@@ -2,24 +2,6 @@ import torch
 import torch.nn.functional as F
 
 
-def negative_binomial_count_loss(log_mu: torch.Tensor, target_counts: torch.Tensor, log_theta: torch.Tensor) -> torch.Tensor:
-    theta = torch.exp(log_theta).clamp_min(1e-4)
-    while theta.dim() < target_counts.dim():
-        theta = theta.unsqueeze(0)
-
-    mu = torch.exp(log_mu).clamp_min(1e-6)
-    target_counts = target_counts.to(mu.dtype)
-
-    log_prob = (
-        torch.lgamma(target_counts + theta)
-        - torch.lgamma(theta)
-        - torch.lgamma(target_counts + 1.0)
-        + theta * (torch.log(theta) - torch.log(theta + mu))
-        + target_counts * (log_mu - torch.log(theta + mu))
-    )
-    return (-log_prob).mean()
-
-
 def mae_count_loss(log_mu: torch.Tensor, target_counts: torch.Tensor) -> torch.Tensor:
     mu = torch.exp(log_mu).clamp_min(1e-6)
     target_counts = target_counts.to(mu.dtype)
@@ -127,7 +109,7 @@ def evaluate_count_model(
             idx = split_indices[start : start + batch_size]
             pred_log_rate = model(features[idx])
             if loss_fn is None:
-                loss = negative_binomial_count_loss(pred_log_rate, targets[idx], model.get_log_theta())
+                loss = mae_count_loss(pred_log_rate, targets[idx])
             else:
                 loss = loss_fn(pred_log_rate, targets[idx])
             pred_counts = torch.exp(pred_log_rate)
@@ -169,7 +151,7 @@ def evaluate_cell_readout(
                 batch_size=batch_size,
             )
             if loss_fn is None:
-                loss = negative_binomial_count_loss(pred_log_rate, targets[idx], model.get_log_theta())
+                loss = mae_count_loss(pred_log_rate, targets[idx])
             else:
                 loss = loss_fn(pred_log_rate, targets[idx])
             pred_counts = torch.exp(pred_log_rate)
@@ -317,8 +299,8 @@ def train_splat_epoch_joint(
         off_tissue_intensity = model.total_intensity(off_tissue_points[off_idx])
         center_support = sample_tissue_support(model.means, tissue_mask_tensor)
 
-        bin_loss = negative_binomial_count_loss(pred_bin_log_rate, bin_targets[bin_idx], model.get_log_theta())
-        cell_loss = negative_binomial_count_loss(pred_cell_log_rate, cell_targets[cell_idx], model.get_log_theta())
+        bin_loss = mae_count_loss(pred_bin_log_rate, bin_targets[bin_idx])
+        cell_loss = mae_count_loss(pred_cell_log_rate, cell_targets[cell_idx])
         off_tissue_loss = off_tissue_intensity.mean()
         center_support_loss = (1.0 - center_support).mean()
         loss = (
