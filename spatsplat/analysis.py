@@ -29,15 +29,6 @@ def compute_splat_weights(model, query_xy: torch.Tensor) -> torch.Tensor:
     return model.compute_weights(query_xy)
 
 
-def parameter_drift_summary(model, initial_state: dict[str, torch.Tensor]) -> dict[str, float]:
-    return {
-        "means_abs_shift": (model.means - initial_state["means"]).abs().mean().item(),
-        "log_scales_abs_shift": (model.log_scales - initial_state["log_scales"]).abs().mean().item(),
-        "rotation_abs_shift": (model.rotation - initial_state["rotation"]).abs().mean().item(),
-        "opacity_abs_shift": (model.opacity_logits - initial_state["opacity_logits"]).abs().mean().item(),
-    }
-
-
 def usage_statistics(weights: torch.Tensor) -> dict[str, object]:
     mean_usage = weights.mean(dim=0)
     peak_usage = weights.max(dim=0).values
