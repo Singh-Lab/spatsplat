@@ -38,4 +38,4 @@ class TrainingConfig:
     splat_latents_lr: float = 1e-3
     splat_log_theta_lr: float = 1e-3
     splat_decoder_lr: float = 1e-3
-    splat_total_count_head_lr: float = 1e-3
+    splat_amplitude_lr: float = 1e-3

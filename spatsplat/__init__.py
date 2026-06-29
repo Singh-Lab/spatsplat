@@ -8,7 +8,6 @@ from .data import (
 )
 from .models import (
     AmplitudeSplatField,
-    DecoupledCountSplatField,
     GaussianSplatField,
 )
 from .baselines import (
@@ -20,7 +19,6 @@ from .baselines import (
 from .training import (
     composition_cosine_loss,
     create_amplitude_splat_optimizer,
-    create_decoupled_splat_optimizer,
     create_splat_optimizer,
     evaluate_cell_readout,
     evaluate_count_model,
@@ -56,7 +54,6 @@ __all__ = [
     "BuiltDataset",
     "AmplitudeSplatField",
     "CountMLP",
-    "DecoupledCountSplatField",
     "composition_cosine_loss",
     "DataConfig",
     "FourierFeatureMLP",
@@ -73,7 +70,6 @@ __all__ = [
     "capture_initial_splat_state",
     "compute_splat_weights",
     "create_amplitude_splat_optimizer",
-    "create_decoupled_splat_optimizer",
     "create_splat_optimizer",
     "evaluate_cell_readout",
     "evaluate_count_model",

@@ -3,20 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class ScalarMLP(nn.Module):
-    def __init__(self, input_dim: int, hidden_dim: int):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, 1),
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.net(x)
-
 
 class SplatBiologyDecoder(nn.Module):
     def __init__(self, latent_dim: int, hidden_dim: int, num_genes: int):
@@ -211,112 +197,6 @@ class AmplitudeSplatField(nn.Module):
 
     def mixed_rates(self, query_xy: torch.Tensor) -> torch.Tensor:
         return self.compute_weights(query_xy) @ self.splat_rates()
-
-    def forward(self, query_xy: torch.Tensor) -> torch.Tensor:
-        return (self.mixed_rates(query_xy) + 1e-6).log()
-
-
-class DecoupledCountSplatField(nn.Module):
-    def __init__(
-        self,
-        num_splats: int,
-        latent_dim: int,
-        hidden_dim: int,
-        num_genes: int,
-        *,
-        init_log_scale: float = -4.5,
-        kernel_sharpness: float = 0.5,
-        top_k_splats: int | None = None,
-        total_count_hidden_dim: int = 128,
-    ):
-        super().__init__()
-        self.splat_field = GaussianSplatField(
-            num_splats=num_splats,
-            latent_dim=latent_dim,
-            hidden_dim=hidden_dim,
-            num_genes=num_genes,
-            init_log_scale=init_log_scale,
-            kernel_sharpness=kernel_sharpness,
-            top_k_splats=top_k_splats,
-        )
-        self.total_count_head = ScalarMLP(input_dim=2, hidden_dim=total_count_hidden_dim)
-
-    @property
-    def latent_dim(self) -> int:
-        return self.splat_field.latent_dim
-
-    @property
-    def hidden_dim(self) -> int:
-        return self.splat_field.hidden_dim
-
-    @property
-    def num_genes(self) -> int:
-        return self.splat_field.num_genes
-
-    @property
-    def init_log_scale(self) -> float:
-        return self.splat_field.init_log_scale
-
-    @property
-    def top_k_splats(self) -> int | None:
-        return self.splat_field.top_k_splats
-
-    @property
-    def kernel_sharpness(self) -> float:
-        return self.splat_field.kernel_sharpness
-
-    @property
-    def num_splats(self) -> int:
-        return self.splat_field.num_splats
-
-    @property
-    def means(self) -> nn.Parameter:
-        return self.splat_field.means
-
-    @property
-    def log_scales(self) -> nn.Parameter:
-        return self.splat_field.log_scales
-
-    @property
-    def rotation(self) -> nn.Parameter:
-        return self.splat_field.rotation
-
-    @property
-    def opacity_logits(self) -> nn.Parameter:
-        return self.splat_field.opacity_logits
-
-    @property
-    def latents(self) -> nn.Parameter:
-        return self.splat_field.latents
-
-    @property
-    def log_theta(self) -> nn.Parameter:
-        return self.splat_field.log_theta
-
-    @property
-    def decoder(self) -> SplatBiologyDecoder:
-        return self.splat_field.decoder
-
-    def get_log_theta(self) -> torch.Tensor:
-        return self.splat_field.get_log_theta()
-
-    def compute_weights(self, query_xy: torch.Tensor) -> torch.Tensor:
-        return self.splat_field.compute_weights(query_xy)
-
-    def mixed_composition(self, query_xy: torch.Tensor) -> torch.Tensor:
-        gene_logits, _ = self.splat_field.decoder(self.splat_field.latents)
-        gene_composition = torch.softmax(gene_logits, dim=-1)
-        return self.compute_weights(query_xy) @ gene_composition
-
-    def log_total_count(self, query_xy: torch.Tensor) -> torch.Tensor:
-        return self.total_count_head(query_xy).squeeze(-1)
-
-    def mixed_rates(self, query_xy: torch.Tensor) -> torch.Tensor:
-        total_count = torch.exp(self.log_total_count(query_xy)).clamp_min(1e-6)
-        return total_count.unsqueeze(-1) * self.mixed_composition(query_xy)
-
-    def total_intensity(self, query_xy: torch.Tensor) -> torch.Tensor:
-        return torch.exp(self.log_total_count(query_xy)).clamp_min(1e-6)
 
     def forward(self, query_xy: torch.Tensor) -> torch.Tensor:
         return (self.mixed_rates(query_xy) + 1e-6).log()

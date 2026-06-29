@@ -191,32 +191,6 @@ def create_splat_optimizer(
     )
 
 
-def create_decoupled_splat_optimizer(
-    model,
-    *,
-    means_lr: float = 5e-3,
-    log_scales_lr: float = 1e-3,
-    rotation_lr: float = 1e-3,
-    opacity_lr: float = 1e-3,
-    latents_lr: float = 1e-3,
-    log_theta_lr: float = 1e-3,
-    decoder_lr: float = 1e-3,
-    total_count_head_lr: float = 1e-3,
-) -> torch.optim.Optimizer:
-    return torch.optim.Adam(
-        [
-            {"params": model.means, "lr": means_lr},
-            {"params": model.log_scales, "lr": log_scales_lr},
-            {"params": model.rotation, "lr": rotation_lr},
-            {"params": model.opacity_logits, "lr": opacity_lr},
-            {"params": model.latents, "lr": latents_lr},
-            {"params": model.log_theta, "lr": log_theta_lr},
-            {"params": model.decoder.parameters(), "lr": decoder_lr},
-            {"params": model.total_count_head.parameters(), "lr": total_count_head_lr},
-        ]
-    )
-
-
 def create_amplitude_splat_optimizer(
     model,
     *,
