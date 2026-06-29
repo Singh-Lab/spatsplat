@@ -10,6 +10,11 @@ dependencies:
   - scipy
   - matplotlib
   - seaborn
+  - scikit-learn
+  - umap-learn
+  - r-base
+  - r-matrix
+  - r-seurat
   - python-dotenv
   - pytorch::pytorch
   - pytorch::pytorch-cuda=12.1
@@ -22,3 +27,4 @@ dependencies:
       - pyarrow
       - fastparquet
       - pillow
+      - abc_atlas_access

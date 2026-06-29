@@ -9,5 +9,5 @@ description = "Spatial transcriptomics Gaussian splat field model"
 requires-python = ">=3.11"
 dependencies = []
 
-[tool.setuptools]
-packages = ["spatsplat"]
+[tool.setuptools.packages.find]
+include = ["spatsplat", "spatsplat.*"]
