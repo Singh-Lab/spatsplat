@@ -142,7 +142,6 @@ def create_amplitude_splat_optimizer(
     rotation_lr: float = 1e-3,
     opacity_lr: float = 1e-3,
     latents_lr: float = 1e-3,
-    log_theta_lr: float = 1e-3,
     decoder_lr: float = 1e-3,
     amplitude_lr: float = 1e-3,
 ) -> torch.optim.Optimizer:
@@ -153,7 +152,6 @@ def create_amplitude_splat_optimizer(
             {"params": model.rotation, "lr": rotation_lr},
             {"params": model.opacity_logits, "lr": opacity_lr},
             {"params": model.latents, "lr": latents_lr},
-            {"params": model.log_theta, "lr": log_theta_lr},
             {"params": model.decoder.parameters(), "lr": decoder_lr},
             {"params": model.log_amplitudes, "lr": amplitude_lr},
         ]

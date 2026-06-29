@@ -12,13 +12,9 @@ class CountMLP(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_dim, output_dim),
         )
-        self.log_theta = nn.Parameter(torch.zeros(output_dim))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.net(x)
-
-    def get_log_theta(self) -> torch.Tensor:
-        return self.log_theta
 
 
 class FourierFeatureMLP(nn.Module):
@@ -41,7 +37,6 @@ class FourierFeatureMLP(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_dim, output_dim),
         )
-        self.log_theta = nn.Parameter(torch.zeros(output_dim))
 
     def encode(self, x: torch.Tensor) -> torch.Tensor:
         projection = 2.0 * torch.pi * (x @ self.B)
@@ -49,6 +44,3 @@ class FourierFeatureMLP(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.net(self.encode(x))
-
-    def get_log_theta(self) -> torch.Tensor:
-        return self.log_theta

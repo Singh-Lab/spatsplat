@@ -101,43 +101,6 @@ def summarize_activity_slices(signed_err: np.ndarray, true_values: np.ndarray) -
     }
 
 
-def spatial_kmeans_init(
-    points_xy: torch.Tensor,
-    num_centers: int,
-    *,
-    random_state: int = 0,
-    batch_size: int = 4096,
-    max_iter: int = 100,
-) -> torch.Tensor:
-    try:
-        from sklearn.cluster import MiniBatchKMeans
-    except ImportError as exc:
-        raise RuntimeError("scikit-learn is required for spatial_kmeans_init") from exc
-
-    coords = points_xy.detach().cpu().numpy().astype(np.float32, copy=False)
-    if coords.ndim != 2 or coords.shape[1] != 2:
-        raise RuntimeError(f"Expected points_xy with shape [N, 2], got {tuple(coords.shape)}")
-    if len(coords) == 0:
-        raise RuntimeError("Cannot initialize splats from an empty point set")
-
-    if len(coords) < num_centers:
-        sample_idx = np.random.default_rng(random_state).choice(len(coords), size=num_centers, replace=True)
-        centers = coords[sample_idx]
-    else:
-        kmeans = MiniBatchKMeans(
-            n_clusters=num_centers,
-            random_state=random_state,
-            batch_size=batch_size,
-            max_iter=max_iter,
-            n_init=3,
-            init="k-means++",
-        )
-        kmeans.fit(coords)
-        centers = kmeans.cluster_centers_.astype(np.float32, copy=False)
-
-    return torch.from_numpy(centers).to(device=points_xy.device, dtype=points_xy.dtype)
-
-
 def farthest_point_sample_indices(
     points_xy: torch.Tensor,
     num_samples: int,
@@ -193,4 +156,3 @@ def farthest_point_sample_indices(
         min_dist2[selected_local[: i + 1]] = -1.0
 
     return candidate_idx[selected_local]
-

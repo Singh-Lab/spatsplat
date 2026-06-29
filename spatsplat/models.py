@@ -46,7 +46,6 @@ class GaussianSplatField(nn.Module):
         self.rotation = nn.Parameter(torch.zeros(num_splats, 1))
         self.opacity_logits = nn.Parameter(torch.zeros(num_splats, 1))
         self.latents = nn.Parameter(torch.randn(num_splats, latent_dim) * 0.01)
-        self.log_theta = nn.Parameter(torch.zeros(num_genes))
         self.decoder = SplatBiologyDecoder(latent_dim, hidden_dim, num_genes)
 
     def gene_rates(self) -> torch.Tensor:
@@ -54,9 +53,6 @@ class GaussianSplatField(nn.Module):
         gene_composition = torch.softmax(gene_logits, dim=-1)
         total_intensity = F.softplus(log_intensity)
         return total_intensity * gene_composition
-
-    def get_log_theta(self) -> torch.Tensor:
-        return self.log_theta
 
     def compute_weights(self, query_xy: torch.Tensor) -> torch.Tensor:
         scales = torch.exp(self.log_scales).clamp_min(1e-4)
@@ -166,15 +162,8 @@ class AmplitudeSplatField(nn.Module):
         return self.splat_field.latents
 
     @property
-    def log_theta(self) -> nn.Parameter:
-        return self.splat_field.log_theta
-
-    @property
     def decoder(self) -> SplatBiologyDecoder:
         return self.splat_field.decoder
-
-    def get_log_theta(self) -> torch.Tensor:
-        return self.splat_field.get_log_theta()
 
     def compute_weights(self, query_xy: torch.Tensor) -> torch.Tensor:
         return self.splat_field.compute_weights(query_xy)

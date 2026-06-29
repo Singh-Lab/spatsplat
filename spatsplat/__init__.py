@@ -1,6 +1,5 @@
 from .config import DataConfig, SplatConfig, TrainingConfig
 from .data import (
-    BuiltDataset,
     LoadedData,
     build_cell_only_targets,
     build_spatial_targets,
@@ -8,7 +7,6 @@ from .data import (
 )
 from .models import (
     AmplitudeSplatField,
-    GaussianSplatField,
 )
 from .baselines import (
     CountMLP,
@@ -31,31 +29,23 @@ from .analysis import (
     compute_splat_weights,
     farthest_point_sample_indices,
     sample_numpy_grid,
-    spatial_kmeans_init,
     summarize_activity_slices,
     summarize_error_slices,
-    summarize_tensor,
     usage_statistics,
 )
 from .autoencoder import (
     GeneProfileAutoencoder,
-    GeneProfileEncoder,
     evaluate_profile_autoencoder,
-    profile_reconstruction_loss,
     train_profile_autoencoder,
 )
-from .checkpoints import load_splat_checkpoint, save_splat_checkpoint
 
 __all__ = [
-    "BuiltDataset",
     "AmplitudeSplatField",
     "CountMLP",
     "composition_cosine_loss",
     "DataConfig",
     "FourierFeatureMLP",
-    "GaussianSplatField",
     "GeneProfileAutoencoder",
-    "GeneProfileEncoder",
     "KNNCountRegressor",
     "LoadedData",
     "MeanProfileBaseline",
@@ -74,15 +64,10 @@ __all__ = [
     "mae_count_loss",
     "make_split_indices",
     "predict_cell_log_rates",
-    "profile_reconstruction_loss",
     "sample_numpy_grid",
     "sample_tissue_support",
-    "save_splat_checkpoint",
-    "spatial_kmeans_init",
     "summarize_activity_slices",
     "summarize_error_slices",
-    "summarize_tensor",
     "train_profile_autoencoder",
     "usage_statistics",
-    "load_splat_checkpoint",
 ]

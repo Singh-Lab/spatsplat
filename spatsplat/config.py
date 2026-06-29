@@ -36,6 +36,5 @@ class TrainingConfig:
     splat_rotation_lr: float = 1e-3
     splat_opacity_lr: float = 1e-3
     splat_latents_lr: float = 1e-3
-    splat_log_theta_lr: float = 1e-3
     splat_decoder_lr: float = 1e-3
     splat_amplitude_lr: float = 1e-3

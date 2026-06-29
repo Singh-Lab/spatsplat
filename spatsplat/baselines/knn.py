@@ -10,7 +10,6 @@ class KNNCountRegressor(nn.Module):
         self.k = k
         self.eps = eps
         mean_target = train_targets.mean(dim=0).clamp_min(1e-6)
-        self.log_theta = nn.Parameter(torch.zeros(train_targets.shape[1], device=train_targets.device))
         self.register_buffer("fallback_log_rate", mean_target.log())
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -27,6 +26,3 @@ class KNNCountRegressor(nn.Module):
             self.fallback_log_rate.exp().expand_as(pred_counts),
         )
         return pred_counts.clamp_min(1e-6).log()
-
-    def get_log_theta(self) -> torch.Tensor:
-        return self.log_theta
