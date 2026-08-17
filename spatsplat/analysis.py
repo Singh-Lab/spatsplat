@@ -110,8 +110,8 @@ def farthest_point_sample_indices(
     random_state: int = 0,
 ) -> torch.Tensor:
     coords = points_xy.detach()
-    if coords.ndim != 2 or coords.shape[1] != 2:
-        raise RuntimeError(f"Expected points_xy with shape [N, 2], got {tuple(coords.shape)}")
+    if coords.ndim != 2 or coords.shape[1] < 1:
+        raise RuntimeError(f"Expected points with shape [N, D], got {tuple(coords.shape)}")
 
     total_points = coords.shape[0]
     if total_points == 0:

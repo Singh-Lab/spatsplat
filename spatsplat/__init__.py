@@ -8,6 +8,7 @@ from .data import (
 from .models import (
     AmplitudeSplatField,
 )
+from .volumetric import VolumetricAmplitudeSplatField
 from .baselines import (
     CountMLP,
     FourierFeatureMLP,
@@ -51,6 +52,7 @@ __all__ = [
     "MeanProfileBaseline",
     "SplatConfig",
     "TrainingConfig",
+    "VolumetricAmplitudeSplatField",
     "build_cell_only_targets",
     "build_spatial_targets",
     "capture_initial_splat_state",
