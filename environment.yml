@@ -11,7 +11,6 @@ dependencies:
   - matplotlib
   - seaborn
   - scikit-learn
-  - scikit-image
   - umap-learn
   - r-base
   - r-matrix

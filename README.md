@@ -51,8 +51,6 @@ The current notebooks are in `notebooks/`:
 - `maturity_field-visium-embryonic_mouse_brain.ipynb`
 - `reconstruction-nsclc_cosmx-lung_cancer.ipynb`
 - `family_transfer-pdac_mets_visium-pancreatic_cancer.ipynb`
-- `boundary_ecology-microstrs-host_gut.ipynb`
-- `geometry_validation-microstrs-colonies.ipynb`
 
 Notebook outputs are written to repo-local folders:
 
@@ -133,21 +131,6 @@ Expected paths:
 $SPATSPLAT_DATA_DIR/raw/pdac_mets_visium_gse272362/PDAC_Updated.rds
 $SPATSPLAT_DATA_DIR/processed/pdac_mets_visium_gse272362/
 ```
-
-### microSTRS Host-Gut Dataset
-
-Used by `boundary_ecology-microstrs-host_gut.ipynb`. The notebook expects the
-processed microbial-taxonomy and host-expression H5AD files for sample
-`GSM9247063_G511` under:
-
-```text
-$SPATSPLAT_DATA_DIR/raw/stereoseq_gut_microbiome/GSM9247063_G511_adata_unmap.h5ad
-$SPATSPLAT_DATA_DIR/raw/stereoseq_gut_microbiome/GSM9247063_G511_adata_host.h5ad
-```
-
-The repository does not currently include a scripted downloader for these files.
-The notebook loads microbial counts but reads only coordinates and masks from the
-larger host file.
 
 ### Allen Brain Cell Atlas MERFISH Cache
 
