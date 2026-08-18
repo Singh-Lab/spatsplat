@@ -46,6 +46,7 @@ The current notebooks are in `notebooks/`:
 - `pseudobatch_alignment-xenium-mouse_brain.ipynb`
 - `reconstruction-merfish-mouse_brain.ipynb`
 - `multislice_registration-merfish-mouse_brain.ipynb`
+- `volumetric_reconstruction-allen_merfish-mouse_brain.ipynb`
 - `reconstruction-merfish-uterine_cancer.ipynb`
 - `maturity_field-visium-embryonic_mouse_brain.ipynb`
 - `reconstruction-nsclc_cosmx-lung_cancer.ipynb`
@@ -133,7 +134,10 @@ $SPATSPLAT_DATA_DIR/processed/pdac_mets_visium_gse272362/
 
 ### Allen Brain Cell Atlas MERFISH Cache
 
-Used by `multislice_registration-merfish-mouse_brain.ipynb`.
+Used by:
+
+- `multislice_registration-merfish-mouse_brain.ipynb`
+- `volumetric_reconstruction-allen_merfish-mouse_brain.ipynb`
 
 This notebook uses `abc_atlas_access` and expects the Allen Brain Cell Atlas cache under:
 

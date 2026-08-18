@@ -215,3 +215,6 @@ figures/
 
 # Checkpoints of models
 notebooks/checkpoints/
+
+# Ideas
+ideas/
