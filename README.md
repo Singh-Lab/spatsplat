@@ -2,6 +2,16 @@
 
 SpatSplat is a refactored research codebase for spatial transcriptomics reconstruction and transfer experiments. The reusable Python library lives in `spatsplat/`; paper-specific dataset loaders and notebook support code live in `paper/` and are intentionally not packaged as the public library.
 
+## Publication Registration Benchmark
+
+Use [the self-contained Allen/BARseq notebook](notebooks/registration_publication_reproducible-allen_barseq.ipynb)
+to prepare cases, fit all eight methods, evaluate them, and produce the compact
+publication figure. No other notebook or existing checkpoint is required.
+Follow the [registration-specific setup and data instructions](docs/registration_reproduction.md)
+first; the general environment below does not include all CAST/PASTE dependencies.
+The [commit file list](docs/registration_publication_files.txt) identifies its
+required source, download helpers, configuration, and documentation.
+
 ## Repository Layout
 
 ```text
@@ -220,3 +230,47 @@ Recommended workflow:
 2. Access the `HumanUterineCancerPatient2-RACostain` / CD45RA dataset through the provided dataset access link.
 3. Download the cell-by-gene, detected transcript, and cell metadata files.
 4. Place them in `$SPATSPLAT_DATA_DIR/raw/merfish-uterinecancer-p2-RACstain/` with the filenames expected above.
+
+## Natural Volumetric Registration
+
+`notebooks/registration_natural-volumetric_allen_merfish.ipynb` compares natural
+slice alignment against the existing Allen pairwise methods, without artificial
+distortions. It uses sections 24/25/26 for development and 28/29/30 plus 32/33/35
+for evaluation. Two fixed flanks train a frozen volumetric field; the middle
+section supplies expression to fit a rigid in-plane pose. Zero and 25-degree
+splat-tilt limits are compared. Section 34 is absent in this donor; 32/33/35 keeps
+the actual unequal z gaps (0.2 and 0.4) and is reported separately. The extra flank is explicitly additional input,
+not a budget- or information-matched advantage attributed solely to 3D geometry.
+
+The notebook reads sampling settings and baseline configurations from the original
+Allen benchmark's `frozen_protocol.json`. Compatible pairwise fits are reused;
+enable the corresponding `RUN_PAIRWISE` flag if an exact cache is missing.
+`RUN_VOLUMETRIC=True` trains missing volumetric artifacts. Start with
+`PHASE='development'`, inspect results, set `FREEZE_DEVELOPMENT=True`, and execute
+the final freeze cell. Then use `PHASE='evaluation'` without tuning on those pairs.
+Primary CCF agreement, observed-expression cosine, and coverage use the original
+pairwise scoring routines and measurement samples. Coordinate displacement is
+only a drift diagnostic, not recovery accuracy.
+
+Data use the existing ABC Atlas directory. New checkpoints are under
+`notebooks/checkpoints/allen_volumetric_natural/`, and PNG/PDF figures are under
+`figures/allen_volumetric_natural/`. Plot-only notebook edits do not invalidate
+the fitting caches. No other notebook needs to run in the same kernel, but the
+original benchmark's frozen manifest is required.
+
+The natural-registration notebook now compares `sharing_weights=[0., 0.05]`
+at each tilt limit, with the splat budget fixed at 1,024. The soft sharing term
+penalizes a splat whose minority flank supplies less than 20% of its combined
+mean responsibility, weighted by detached usage. It does not force 50/50 support.
+Only flanking training measurements enter this term. Dense responsibilities
+provide gradients beyond top-k support; reconstruction still uses the original
+top-k readout. Train/validation diagnostics report actual top-k shared usage,
+dense/sparse sharing penalties, boundary accumulation, and z widths.
+Field checkpoints still use validation reconstruction alone. Natural CCF and
+expression scores, not shared support alone, determine whether the prior helps.
+
+This is a new development protocol and cache identity: missing volumetric variants
+train with `RUN_VOLUMETRIC=True` without forcing retraining of cached variants.
+Compatible pairwise caches are searched across previous natural-registration runs.
+Existing frozen protocols are not overwritten; archive an old natural-registration
+freeze explicitly before freezing the new protocol after development review.
