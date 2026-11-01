@@ -1,6 +1,7 @@
 """Results-only publication figure for the common Allen/BARseq roster."""
 import numpy as np
-from .standardized_rigid import METHODS
+METHODS = ('Unregistered', 'Geometry rigid ICP', 'PASTE rigid', 'CAST affine',
+           'CAST non-affine', 'Splat rigid', 'Splat affine', 'Splat non-affine')
 
 EXAMPLES = ('allen_28_29_natural', 'allen_28_29_combined_distortion',
             'barseq_23_keep_0.8_direction_0')
@@ -8,7 +9,8 @@ EXAMPLES = ('allen_28_29_natural', 'allen_28_29_combined_distortion',
 BARSEQ_SECTION_STYLES = ((15, 's', '///'), (23, '^', '\\\\\\'), (27, 'D', 'xxx'))
 
 
-def validate_inputs(cases, fitted, scores, example_method, include_cosine=True):
+def validate_inputs(cases, fitted, scores, example_method, include_cosine=True, methods=None):
+    methods = METHODS if methods is None else tuple(methods)
     lookup = {c['name']: c for c in cases}
     for name in EXAMPLES:
         if name not in lookup or example_method not in fitted.get(name, {}):
@@ -16,7 +18,7 @@ def validate_inputs(cases, fitted, scores, example_method, include_cosine=True):
     evaluation = [c for c in cases if c['role'] == 'evaluation']
     for c in evaluation:
         rows = scores[scores.case == c['name']]
-        if rows.method.duplicated().any() or set(rows.method) != set(METHODS):
+        if rows.method.duplicated().any() or set(rows.method) != set(methods):
             raise ValueError(f'Incomplete method scores: {c["name"]}')
         metrics = ['ccf_division_agreement' if c['task'] == 'natural' else 'positional_accuracy']
         if include_cosine:
@@ -85,23 +87,30 @@ def draw_measurement_links(ax, case, mapped, reference_colors, query_colors, *, 
 
 
 def publication_figure(cases, fitted, scores, *, example_method='Splat rigid', include_cosine=False,
-                       measurement_links=False, maximum_links=60):
+                       measurement_links=False, maximum_links=60, methods=None):
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
     from matplotlib.patches import Patch
     from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-    from paper.allen_ccf_diagnostics import load_hierarchy, region_labels, UNANNOTATED
-    lookup = validate_inputs(cases, fitted, scores, example_method, include_cosine)
+    roster = METHODS if methods is None else tuple(methods)
+    lookup = validate_inputs(cases, fitted, scores, example_method, include_cosine, methods=roster)
     chosen = [lookup[name] for name in EXAMPLES]
-    hierarchy = load_hierarchy()
-    labels = [[region_labels(x, hierarchy, 'division') for x in c['labels']] for c in chosen[:2]]
+    UNANNOTATED = 'Unannotated'
+    if all('division_labels' in c for c in chosen[:2]):
+        labels = [c['division_labels'] for c in chosen[:2]]
+    else:
+        from paper.allen_ccf_diagnostics import load_hierarchy, region_labels
+        hierarchy = load_hierarchy()
+        labels = [[region_labels(x, hierarchy, 'division') for x in c['labels']] for c in chosen[:2]]
     regions = sorted(set(np.concatenate([x for pair in labels for x in pair])) - {UNANNOTATED})
     if len(regions) > 20:
         raise ValueError('More than 20 divisions require an explicit palette')
     palette = {r: plt.get_cmap('tab20')(i) for i, r in enumerate(regions)}
     palette[UNANNOTATED] = '#bbbbbb'
-    colors = dict(zip(METHODS, ['#888888', '#3c78a8', '#c17a26', '#925f9e',
-                              '#bd83bd', '#d1495b', '#5c9a72', '#135f43']))
+    colors = dict(zip(roster, ['#888888', '#3c78a8', '#c17a26', '#925f9e',
+                             '#bd83bd', '#d1495b', '#5c9a72', '#135f43', '#c35b16', '#186e85']))
+    if len(roster) > len(colors):
+        raise ValueError('Provide an explicit palette for more than ten methods')
     with plt.rc_context({'font.family': 'sans-serif',
                          'font.sans-serif': ['Arial', 'Helvetica', 'DejaVu Sans'],
                          'font.size': 8, 'axes.titlesize': 9, 'axes.labelsize': 8,
@@ -169,10 +178,10 @@ def publication_figure(cases, fitted, scores, *, example_method='Splat rigid', i
                 values = []
                 for j, (section, marker) in enumerate(((28, 'o'), (32, 'D'))):
                     g = scores[(scores.dataset == 'Allen') & (scores.task == task) & (scores.section == section)]
-                    v = g.set_index('method').loc[list(METHODS), metric].to_numpy()
+                    v = g.set_index('method').loc[list(roster), metric].to_numpy()
                     values.extend(v)
-                    ax.scatter(v, np.arange(len(METHODS))+(j-.5)*.22, c=[colors[m] for m in METHODS], marker=marker, s=22)
-                ax.set_yticks(range(len(METHODS)), METHODS if col == 2 else ['']*len(METHODS))
+                    ax.scatter(v, np.arange(len(roster))+(j-.5)*.22, c=[colors[m] for m in roster], marker=marker, s=22)
+                ax.set_yticks(range(len(roster)), roster if col == 2 else ['']*len(roster))
                 ax.invert_yaxis()
                 limits = (-.02, 1.02)
                 if metric == 'ccf_division_agreement':
@@ -191,12 +200,13 @@ def publication_figure(cases, fitted, scores, *, example_method='Splat rigid', i
         for col, metric, label in coverage_panels:
             ax = axes[2, col]
             for k, level in enumerate((1., .6, .2)):
-                for j, method in enumerate(METHODS):
+                for j, method in enumerate(roster):
                     g = follow[(follow.method == method) & np.isclose(follow.shared_fraction, level)].sort_values(['section', 'direction'])
                     if g.empty:
                         raise ValueError(f'Missing BARseq group: {method}, {level}')
-                    position = k+(j-(len(METHODS)-1)/2)*.105
-                    ax.boxplot([g[metric].to_numpy()], positions=[position], widths=.085,
+                    step = min(.105, .84/len(roster))
+                    position = k+(j-(len(roster)-1)/2)*step
+                    ax.boxplot([g[metric].to_numpy()], positions=[position], widths=.085 if len(roster)<=8 else step*.8,
                                manage_ticks=False, showfliers=False, patch_artist=True,
                                boxprops=dict(facecolor=colors[method], alpha=.3),
                                medianprops=dict(color=colors[method]))
@@ -229,6 +239,6 @@ def publication_figure(cases, fitted, scores, *, example_method='Splat rigid', i
             Line2D([], [], marker='D', linestyle='', color='black', label='Allen: pair 32/33 or section 32'),
             *section_handles], loc='center', ncol=4, frameon=False)
         legend = fig.add_subplot(grid[4, :]); legend.axis('off')
-        legend.legend(handles=[Patch(facecolor=colors[m], label=m) for m in METHODS],
-                      loc='center', ncol=4, frameon=False)
+        legend.legend(handles=[Patch(facecolor=colors[m], label=m) for m in roster],
+                      loc='center', ncol=5 if len(roster)>8 else 4, frameon=False)
     return fig

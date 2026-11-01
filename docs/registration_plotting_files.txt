@@ -1,0 +1,10 @@
+# Optional plotting-only files. Supply an exported plot-data bundle separately.
+# No model checkpoint, raw dataset, training notebook, or private .env is needed.
+notebooks/registration_publication_plots-allen_barseq.ipynb
+paper/__init__.py
+paper/workflows/__init__.py
+paper/workflows/registration_plot_data.py
+paper/workflows/standardized_publication.py
+pyproject.toml
+docs/registration_plotting_files.txt
+tests/test_registration_plot_data.py
