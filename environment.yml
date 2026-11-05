@@ -28,3 +28,4 @@ dependencies:
       - fastparquet
       - pillow
       - abc_atlas_access
+      - plotly>=6,<8

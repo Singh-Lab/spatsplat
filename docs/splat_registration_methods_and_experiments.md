@@ -1,8 +1,20 @@
 # Splat registration: methods, experiments, and metrics
 
-This document describes the current two-dimensional standardized benchmark in
-`notebooks/registration_standardized-allen_barseq.ipynb`. It does not describe
-the separate joint volumetric registration experiments.
+Updated: 2026-10-31.
+
+This document describes the two-dimensional standardized benchmark and final
+publication figure in
+`notebooks/registration_publication_reproducible-allen_barseq.ipynb`.
+The self-contained notebook clones the experiment developed in
+`notebooks/registration_standardized-allen_barseq.ipynb`, but does not execute or
+read that notebook. It prepares its own inputs, fits missing models, evaluates
+the results, and exports the figure. Existing compatible caches are optional.
+The separate joint volumetric registration experiments are not included here.
+
+For environment installation, data download commands, and the files to commit,
+see [registration_reproduction.md](registration_reproduction.md).
+For numerical outcomes, failures, and suggested manuscript wording, see
+[registration_results_summary.md](registration_results_summary.md).
 
 ## 1. The central idea
 
@@ -178,6 +190,17 @@ to describe every splat variant as either geometry-only or expression-only.
 
 ## 4. Experiments
 
+The complete protocol has 34 cases: six Allen cases (three section pairs, each
+with a natural and a controlled case) and 28 BARseq cases (four sections, seven
+coverage/direction cases each). Eight methods produce 272 case-method score rows
+when all fits complete. Quantitative publication panels show the fixed evaluation
+cases, not the Allen development pair or BARseq initial section 19.
+
+Seed 1023 is the configured base seed. Each method uses the same settings across
+the two datasets; there is no per-test-case selection of the best splat variant.
+The development/initial examples informed exploratory work, so the full exercise
+should not be characterized as a prospectively preregistered benchmark.
+
 All tasks use the same eight-method roster:
 
 | Method | Purpose |
@@ -195,6 +218,23 @@ Here the PASTE label describes this benchmark's rigid coordinate readout, not
 the full range of analyses possible with PASTE. MLP and volumetric splat methods
 are not part of this standardized roster. No method uses histology images or
 CCF region labels for fitting.
+
+### Baseline configuration and common evaluation
+
+- Geometry rigid ICP uses the shared four-start implementation with 100 iterations.
+- PASTE uses alpha 0.1, 400 outer iterations, and up to 1,000,000 inner iterations.
+  The repository's corrected local solver is required; it is not an unmodified
+  call to the installed PASTE optimization routine.
+- CAST uses 400 representation-learning epochs, 1500 affine iterations, and 800
+  non-affine iterations, with coordinate scale 1000 and reflections disabled.
+  Its affine and non-affine outputs are both retained, not selected by test scores.
+- CAST and PASTE run on CPU in this protocol. Splats use CUDA when available.
+
+All methods receive the same fitting observations within a case. They do not
+necessarily use the same internal representation or preprocessing. Saved native
+transformations are applied to evaluation coordinates; held-out BARseq coordinates
+are not mapped by interpolating training-point displacement vectors. Missing
+methods are recorded explicitly rather than replaced with unregistered results.
 
 ### Experiment A: Real adjacent Allen MERFISH sections
 
@@ -376,19 +416,81 @@ biological registration accuracy.
 
 ## 6. Publication figure and interpretation
 
-The main figure has three rows and three columns:
+### Final compact layout
 
-| Row | Before / after panels | Quantitative panel |
-|---|---|---|
-| Real Allen sections | A/B | C: CCF division agreement |
-| Allen combined distortion | D/E | F: positional accuracy |
-| BARseq unequal coverage | G/H | I: positional accuracy versus shared coverage |
+The accepted main figure contains seven panels, A-G:
 
-Reference measurements are filled circles; query measurements are hollow.
-The same configurable example method is shown in all three after panels, with
-Splat rigid as the default. All eight methods appear in quantitative comparisons.
-Examples are fixed, not chosen as each method's best result. The optional expanded
-supplement adds the coverage-weighted cosine column and uses A-L lettering.
+| Panel | Content |
+|---|---|
+| A | Natural Allen sections 29 to 28, side by side with inferred measurement correspondences |
+| B | CCF division agreement for evaluation pairs 28/29 and 32/33 |
+| C | Allen section 28 and its rotated/smoothly deformed copy, with inferred measurement correspondences |
+| D | Positional accuracy for the controlled cases on sections 28 and 32 |
+| E | BARseq section 23 unequal-coverage example before registration |
+| F | The same BARseq example after registration |
+| G | BARseq positional accuracy across shared fractions 100%, 60%, and 20% |
+
+The BARseq example retains 80% per view, corresponding to nominal 60% shared
+parent coverage, with crop direction 0 degrees. These example cases are fixed,
+not chosen separately as each method's best outcome. `CORRESPONDENCE_EXAMPLE_METHOD`
+defaults to Splat rigid and controls A, C, and F consistently. All eight methods
+remain visible in B, D, and G.
+
+### What the correspondence lines mean
+
+Panels A and C connect **measurements**, not splat centers. Their construction is:
+
+1. Apply the selected registration map to query coordinates.
+2. Find mutual nearest neighbors between reference and mapped-query measurements.
+3. Retain pairs no farther apart than twice the median reference-neighbor spacing.
+4. If more than 60 pairs qualify, sample 60 uniformly without replacement using
+   seed 1023. `MAX_MEASUREMENT_LINKS` controls this display cap.
+5. Draw the two sections in their original input coordinates, shifting the query
+   horizontally only for display. Connect the selected measurement identities.
+
+Both sections use filled circles and the same CCF division color palette.
+Unannotated measurements are grey. Matched endpoints have small black outlines;
+all other measurements remain visible. Each panel reports shown and eligible
+link counts. Neither CCF labels, expression similarity, nor known identity is
+used to filter the displayed matches. There is no preference for high-scoring
+regions or the smallest registration errors within the eligible set.
+
+These lines illustrate **post-registration inferred correspondence**, not
+verified biological matches, registration displacements, error vectors, or the
+anchors used to train non-affine registration. The same inference rule is used
+for the controlled copy even though its original measurement identities are
+known. The horizontal display offset has no role in fitting or scoring.
+
+Mutual matching and the distance cutoff intentionally omit unsupported matches;
+the lines alone must not be treated as evidence of complete tissue recovery.
+The quantitative panels use the full planned evaluation subsets, not the 60
+displayed pairs. CCF agreement uses the spatial transport readout described
+above, not these mutual-neighbor display links.
+
+### BARseq panels and visual encodings
+
+E and F are before/after overlays in a common reference frame, with filled grey
+reference measurements and hollow teal query measurements. They use identical
+padded coordinate limits and matched physical aspect ratios, preventing
+independent zooming/recentering from changing the visual comparison. These
+overlays show the supplied views; scoring remains restricted to held-out
+measurements in the true shared region.
+
+In G, colors identify methods. Section identities use both shapes and hatches:
+section 15 is a diagonally hatched square, section 23 an oppositely hatched
+triangle, and section 27 a crosshatched diamond. The legend uses the same symbols.
+Dashed vertical separators distinguish the three shared-coverage groups. Boxes
+summarize case-level scores, with individual cases shown; they are not confidence
+intervals over independent animals. Shape meanings differ between the Allen and
+BARseq quantitative panels and are explicitly separated in the legend.
+
+Coverage-weighted cosine remains computed and saved, but is omitted from the
+compact main figure. The optional expanded supplement restores the before/after
+layout with cosine panels and A-L lettering. Set `MAKE_PUBLICATION_SUPPLEMENT=True`
+to export it separately. Arial is requested, with Helvetica/DejaVu Sans fallback
+when unavailable; the code alone does not guarantee that Arial is installed.
+
+### Scope of the result
 
 The intended claim is that continuous splat fields provide a useful medium for
 expression-guided registration, especially when sampling differences weaken
@@ -416,6 +518,33 @@ splat variant after inspecting test performance.
 - `paper/workflows/standardized_maps.py`: native transformation replay.
 - `paper/workflows/standardized_publication.py`: main and supplementary figures.
 
-Per-run `protocol.json`, `scores.csv`, `method_availability.csv`, fit status,
-and replay audits under `notebooks/checkpoints/registration_standardized/` provide
-the recorded configuration and results. Figure exports go under root `figures/`.
+## 8. Reproduction and recorded artifacts
+
+The self-contained notebook uses the same fitting/evaluation helpers as the
+development notebook. It needs the repository source, installed dependencies,
+and downloaded data, but no other notebook execution or previously fitted model.
+
+- `scripts/download_registration_allen.py` populates the Allen atlas cache with
+  expression, section metadata, reconstructed CCF labels, and the CCF hierarchy.
+- `scripts/download_barseq_pilot.py` downloads and checksum-verifies the fixed
+  BARseq dataset and variable dictionary.
+- `.env` supplies the user's absolute `SPATSPLAT_DATA_DIR`; optional
+  `SPATSPLAT_ABC_ATLAS_DIR` overrides the default atlas cache location.
+- `requirements-registration.txt` records the direct dependencies and pinned
+  CAST/atlas-client revisions used for the reproduction setup.
+
+Shared fit caches remain under `notebooks/checkpoints/registration_standardized/`.
+The standalone notebook writes its reports under
+`notebooks/checkpoints/registration_publication_reproducible/reports/<ID>/`
+and figures under `figures/registration_publication_reproducible/<ID>/`.
+It records `protocol.json`, `case_inventory.csv`, `scores.csv`,
+`method_availability.csv`, `all_fit_status.csv`, `completion.json`, native-map
+replay audits, and `data_environment_provenance.json`. The latter records package
+versions, effective data paths, the selected atlas manifest when available, and
+source fingerprints. The original development reports are not overwritten.
+
+Exact reproducibility also depends on data release, package build, hardware, and
+numerics, not just the random seed. The source-only clone/import checks and unit
+tests passed when the notebook was prepared; a new-environment installation and
+complete clean-data rerun were not executed as part of that packaging step.
+See `docs/registration_publication_files.txt` for the explicit commit checklist.
