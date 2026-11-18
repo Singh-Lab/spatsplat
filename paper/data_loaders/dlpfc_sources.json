@@ -1,0 +1,85 @@
+{
+  "doi": "10.5281/zenodo.6334774",
+  "record_url": "https://zenodo.org/records/6334774",
+  "repro_commit": "6c5a6ef456cc49a41135863f16e6c26b5585a6fd",
+  "files": [
+    {
+      "name": "151507_preprocessed.h5",
+      "size": 47790300,
+      "md5": "312ccc6af22dc934d9d420b5ce171af9",
+      "url": "https://zenodo.org/api/records/6334774/files/151507_preprocessed.h5/content"
+    },
+    {
+      "name": "151508_preprocessed.h5",
+      "size": 41781647,
+      "md5": "d2ac6483f15245cd8eb8dc1d50870de5",
+      "url": "https://zenodo.org/api/records/6334774/files/151508_preprocessed.h5/content"
+    },
+    {
+      "name": "151509_preprocessed.h5",
+      "size": 55407438,
+      "md5": "f67c1e4876bbb85716fbd7203bd9f81a",
+      "url": "https://zenodo.org/api/records/6334774/files/151509_preprocessed.h5/content"
+    },
+    {
+      "name": "151510_preprocessed.h5",
+      "size": 50648421,
+      "md5": "51e4283a89967089c0591cc19ae6a118",
+      "url": "https://zenodo.org/api/records/6334774/files/151510_preprocessed.h5/content"
+    },
+    {
+      "name": "151669_preprocessed.h5",
+      "size": 52527141,
+      "md5": "0a347b1ac978ca563a35ebcd097e2613",
+      "url": "https://zenodo.org/api/records/6334774/files/151669_preprocessed.h5/content"
+    },
+    {
+      "name": "151670_preprocessed.h5",
+      "size": 46813527,
+      "md5": "1d576c32a656b678df8124018fa099f6",
+      "url": "https://zenodo.org/api/records/6334774/files/151670_preprocessed.h5/content"
+    },
+    {
+      "name": "151671_preprocessed.h5",
+      "size": 61365868,
+      "md5": "53d8dd5523bff886796c1c2bc3783166",
+      "url": "https://zenodo.org/api/records/6334774/files/151671_preprocessed.h5/content"
+    },
+    {
+      "name": "151672_preprocessed.h5",
+      "size": 55441294,
+      "md5": "59aaa9d2ba64ba1022f4dcc35eeb4d71",
+      "url": "https://zenodo.org/api/records/6334774/files/151672_preprocessed.h5/content"
+    },
+    {
+      "name": "151673_preprocessed.h5",
+      "size": 64297885,
+      "md5": "c6419fa17dd04ea5f0ae2d131fdd8bdd",
+      "url": "https://zenodo.org/api/records/6334774/files/151673_preprocessed.h5/content"
+    },
+    {
+      "name": "151674_preprocessed.h5",
+      "size": 79249669,
+      "md5": "391572fb72ec848409086255b2040860",
+      "url": "https://zenodo.org/api/records/6334774/files/151674_preprocessed.h5/content"
+    },
+    {
+      "name": "151675_preprocessed.h5",
+      "size": 51871460,
+      "md5": "7b9aef22498a3047f53282afcb8467d8",
+      "url": "https://zenodo.org/api/records/6334774/files/151675_preprocessed.h5/content"
+    },
+    {
+      "name": "151676_preprocessed.h5",
+      "size": 53492295,
+      "md5": "6756bd73848520a230006403656215f8",
+      "url": "https://zenodo.org/api/records/6334774/files/151676_preprocessed.h5/content"
+    },
+    {
+      "name": "spatialLIBD_table_S5.csv",
+      "size": 27467,
+      "md5": "a211a3114e0d029cc4f82ebb49454324",
+      "url": "https://zenodo.org/api/records/6334774/files/spatialLIBD_table_S5.csv/content"
+    }
+  ]
+}

@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "source_report": "/home/javeda/Documents/Research/spatsplat-registration/notebooks/checkpoints/registration_publication_controls/5b2016112ab99603ff0c/reports",
+  "methods": [
+    "Unregistered",
+    "Geometry rigid ICP",
+    "PASTE rigid",
+    "CAST affine",
+    "CAST non-affine",
+    "Splat rigid",
+    "Splat affine",
+    "Splat non-affine",
+    "PASTE2 rigid",
+    "MLP-MAE rigid"
+  ],
+  "protocol": {
+    "seed": 1023,
+    "device": "cuda",
+    "options": {
+      "Geometry": {
+        "iterations": 100
+      },
+      "PASTE": {
+        "alpha": 0.1,
+        "iterations": 400,
+        "inner_iterations": 1000000,
+        "gpu": false,
+        "seed": 1023
+      },
+      "CAST": {
+        "mark_epochs": 400,
+        "affine_iterations": 1500,
+        "ffd_iterations": 800,
+        "gpu": false,
+        "seed": 1023,
+        "coordinate_scale": 1000.0,
+        "affine_step_multiplier": 0.1,
+        "ffd_step_size": 5.0,
+        "affine_diff_step": 50.0,
+        "ffd_diff_step": 5.0
+      },
+      "Splat": {
+        "ae_epochs": 150,
+        "min_steps": 1500,
+        "seed": 1023,
+        "device": "cuda",
+        "engine_options": {
+          "registration_query_count": 2048,
+          "registration_epochs": 500,
+          "registration_lr": 0.01,
+          "registration_log_every": 50,
+          "registration_rigid_reg_weight": 0.01,
+          "nonaffine_grid_size": 8,
+          "nonaffine_epochs": 400,
+          "nonaffine_lr": 0.005,
+          "nonaffine_smoothness_weight": 0.01,
+          "nonaffine_splat_match_weight": 1.0,
+          "nonaffine_min_valid_fraction": 0.25,
+          "init_log_amplitude": 6.0,
+          "section_splat_epochs": 150,
+          "section_splat_batch_size": 512,
+          "section_splat_means_lr": 0.005,
+          "section_splat_log_scales_lr": 0.001,
+          "section_splat_rotation_lr": 0.001,
+          "section_splat_opacity_lr": 0.001,
+          "section_splat_latents_lr": 0.001,
+          "section_splat_decoder_lr": 0.001,
+          "section_splat_amplitude_lr": 0.001,
+          "section_composition_loss_weight": 1.0,
+          "section_total_count_loss_weight": 0.2,
+          "section_mae_refine_weight": 1.0,
+          "section_mae_refine_fraction": 0.25,
+          "seed_neighbor_k": 16,
+          "section_mask_grid_size": 128,
+          "section_cell_mask_min_radius": 1.5,
+          "section_off_tissue_batch_size": 2048,
+          "section_off_tissue_weight": 0.01,
+          "section_center_support_weight": 0.001,
+          "display_sig_digits": 4,
+          "nonaffine_inverse_steps": 80,
+          "nonaffine_inverse_tolerance": 1e-06,
+          "nonaffine_contraction_limit": 0.8,
+          "nonaffine_displacement_weight": 10.0,
+          "nonaffine_support_weight": 10.0,
+          "nonaffine_support_margin": 0.02,
+          "splat_config": {
+            "num_splats": 512,
+            "latent_dim": 32,
+            "hidden_dim": 128,
+            "init_log_scale": -4.5,
+            "kernel_sharpness": 0.5
+          }
+        }
+      }
+    },
+    "versions": {
+      "numpy": "2.4.2",
+      "scipy": "1.17.1",
+      "torch": "2.10.0+cu128",
+      "anndata": "0.12.10",
+      "paste-bio": "1.4.0",
+      "POT": "0.9.4",
+      "CAST": "0.4",
+      "dgl": "1.1.3"
+    },
+    "methods": [
+      "Unregistered",
+      "Geometry rigid ICP",
+      "PASTE rigid",
+      "CAST affine",
+      "CAST non-affine",
+      "Splat rigid",
+      "Splat affine",
+      "Splat non-affine",
+      "PASTE2 rigid",
+      "MLP-MAE rigid"
+    ],
+    "allen_pairs": [
+      [
+        "development",
+        24,
+        25
+      ],
+      [
+        "evaluation",
+        28,
+        29
+      ],
+      [
+        "evaluation",
+        32,
+        33
+      ]
+    ],
+    "barseq_sections": [
+      19,
+      15,
+      23,
+      27
+    ],
+    "allen_maximum": 3000,
+    "barseq_maximum": 8000,
+    "source_signature": "750330c22a3ab6a6fa7b92bbbde22e51af803a4dcb25057798b2759ede13616f",
+    "rigid_settings": {
+      "angle_starts": 12,
+      "refine_starts": 3,
+      "steps": 300,
+      "lr": 0.002,
+      "batch_size": 512,
+      "geometry_weight": 0.0,
+      "seed": 1023
+    },
+    "rigid_signature": "83b1c1463ebf91ab21d10d0a4af7b96f6d08d3cba60ec50cf5573e4b67823249",
+    "extra_options": {
+      "paste2": {
+        "alpha": 0.1,
+        "iterations": 1000,
+        "seed": 1023
+      },
+      "mlp": {
+        "hidden_dim": 128,
+        "epochs": 300,
+        "min_steps": 2000,
+        "batch_size": 512,
+        "lr": 0.001,
+        "seed": 1023,
+        "device": "cuda"
+      },
+      "rigid": {
+        "angle_starts": 12,
+        "refine_starts": 3,
+        "steps": 300,
+        "lr": 0.002,
+        "batch_size": 512,
+        "geometry_weight": 0.0,
+        "seed": 1023
+      }
+    },
+    "extra_source": "8f8f73f059d2640b45f178dcdc438e64d518dbeb1d3d26d3ca66a8795d3a0741",
+    "publication_sources": {
+      "publication_controls.py": "d53ebbb4044b29e7c20455f1d6adf9d25d2fabe5e5317f4b798045c1adb75f07",
+      "registration_timing.py": "e2d93baa171f1f5780346178e39126e17f6bc200839148c5426dd549254583d8",
+      "standardized_publication.py": "7ee1266dd3ccbf81055e5b0275e2d4b7a55ad0e0463af71fc18eeac2dc71dea0"
+    },
+    "paste2_version": "1.0.1",
+    "paste2_direct_url": null
+  },
+  "hardware": [
+    "{\"cpu\": \"x86_64\", \"gpu\": [\"NVIDIA GeForce RTX 5090\"], \"host\": \"pop-os\", \"torch_threads\": 16}"
+  ],
+  "tables": {
+    "scores": "scores.csv.gz",
+    "availability": "availability.csv.gz",
+    "cases": "cases.csv.gz",
+    "timings": "timings.csv.gz",
+    "measurements": "measurements.csv.gz",
+    "registered": "registered.csv.gz"
+  },
+  "expected_results": 340,
+  "complete": true,
+  "timing_completion": {
+    "source_bundle": "/home/javeda/Documents/Research/spatsplat-registration/notebooks/checkpoints/registration_publication_controls/5b2016112ab99603ff0c/reports/plot_data/20261101T214518078609Z",
+    "report": "/home/javeda/Documents/Research/spatsplat-registration/notebooks/checkpoints/registration_timing_completion/9aab12360df066232562",
+    "scope": "evaluation",
+    "remaining": []
+  }
+}

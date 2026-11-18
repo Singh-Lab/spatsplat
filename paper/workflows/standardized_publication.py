@@ -1,0 +1,320 @@
+"""Results-only publication figure for the common Allen/BARseq roster."""
+import numpy as np
+METHODS = ('Unregistered', 'Geometry rigid ICP', 'PASTE rigid', 'CAST affine',
+           'CAST non-affine', 'Splat rigid', 'Splat affine', 'Splat non-affine')
+
+EXAMPLES = ('allen_28_29_natural', 'allen_28_29_combined_distortion',
+            'barseq_23_keep_0.8_direction_0')
+
+
+def expression_cosine_figure(scores, methods, *, figsize=(15, 6.5), font='Arial'):
+    """Standalone expression-score panels, using evaluation cases only."""
+    import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+    methods = tuple(methods)
+    palette = ['#888888', '#3c78a8', '#c17a26', '#925f9e', '#bd83bd',
+               '#d1495b', '#5c9a72', '#135f43', '#c35b16', '#186e85']
+    if not methods or len(methods)>len(palette):
+        raise ValueError('Expected one to ten methods')
+    colors = dict(zip(methods,palette))
+    metric = 'coverage_weighted_cosine'
+    evaluation = scores[(scores.role=='evaluation') & scores.method.isin(methods)]
+    if evaluation.duplicated(['case','method']).any():
+        raise ValueError('Duplicate case/method scores')
+    # Require the same fixed evaluation matrix as the publication benchmark.
+    expected = [f'allen_{a}_{b}_{task}' for a,b in ((28,29),(32,33))
+                for task in ('natural','combined_distortion')]
+    expected += [f'barseq_{s}_keep_{keep}_direction_{d}' for s in (15,23,27)
+                 for keep,directions in (('1',(0,)),('0.8',(0,60,120)),('0.6',(0,60,120)))
+                 for d in directions]
+    for case in expected:
+        g = evaluation[evaluation.case==case]
+        if set(g.method)!=set(methods) or not np.isfinite(g[metric].to_numpy(dtype=float)).all():
+            raise ValueError(f'Missing or nonfinite expression scores: {case}')
+    evaluation = evaluation[evaluation.case.isin(expected)]
+    with plt.rc_context({'font.family':'sans-serif','font.sans-serif':[font,'DejaVu Sans'],
+                         'font.size':9,'axes.titlesize':10,'pdf.fonttype':42}):
+        fig = plt.figure(figsize=figsize, layout='constrained')
+        grid = fig.add_gridspec(3,3,height_ratios=[1,.17,.22],width_ratios=[1,1,1.8])
+        axes = [fig.add_subplot(grid[0,i]) for i in range(3)]
+        for ax,task,title in zip(axes[:2],('natural','combined_distortion'),
+                                ('A  Allen: natural registration','B  Allen: controlled recovery')):
+            for j,(section,marker) in enumerate(((28,'o'),(32,'D'))):
+                g = evaluation[(evaluation.dataset=='Allen')&(evaluation.task==task)&(evaluation.section==section)]
+                v = g.set_index('method').loc[list(methods),metric].to_numpy()
+                ax.scatter(v,np.arange(len(methods))+(j-.5)*.22,
+                           c=[colors[m] for m in methods],marker=marker,s=30)
+            ax.set_yticks(range(len(methods)),methods)
+            ax.invert_yaxis()
+            ax.set(xlim=(-.02,1.02),xlabel='Coverage-weighted expression cosine',title=title)
+            ax.grid(axis='x',alpha=.2); ax.set_axisbelow(True)
+        ax = axes[2]
+        follow = evaluation[evaluation.dataset=='BARseq']
+        for k,level in enumerate((1.,.6,.2)):
+            for j,method in enumerate(methods):
+                g = follow[(follow.method==method)&np.isclose(follow.shared_fraction,level)].sort_values(['section','direction'])
+                step = min(.105,.84/len(methods))
+                position = k+(j-(len(methods)-1)/2)*step
+                ax.boxplot([g[metric].to_numpy()],positions=[position],widths=step*.8,
+                           manage_ticks=False,showfliers=False,patch_artist=True,
+                           boxprops=dict(facecolor=colors[method],alpha=.3),
+                           medianprops=dict(color=colors[method]))
+                offsets = np.linspace(-.025,.025,len(g))
+                for section,marker,hatch in BARSEQ_SECTION_STYLES:
+                    mask = g.section.to_numpy()==section
+                    ax.scatter(position+offsets[mask],g.loc[mask,metric],s=26,marker=marker,
+                               c=colors[method],edgecolors='#333333',linewidths=.35,hatch=hatch,zorder=3)
+        for boundary in (.5,1.5):
+            ax.axvline(boundary,color='#888888',linestyle='--',linewidth=.8)
+        ax.set_xticks(range(3),['100%','60%','20%'])
+        ax.set(xlim=(-.5,2.5),ylim=(-.02,1.02),xlabel='Shared fraction of parent tissue',
+               ylabel='Coverage-weighted expression cosine',title='C  BARseq: unequal coverage')
+        ax.grid(axis='y',alpha=.2); ax.set_axisbelow(True)
+        symbols = fig.add_subplot(grid[1,:]); symbols.axis('off')
+        handles = [Line2D([],[],marker=m,linestyle='',color='#333333',
+                         label=f'Allen: pair {s}/{s+1} or section {s}') for s,m in ((28,'o'),(32,'D'))]
+        handles += [symbols.scatter([],[],marker=m,s=45,facecolors='white',edgecolors='#333333',
+                                    hatch=h,label=f'BARseq: section {s}') for s,m,h in BARSEQ_SECTION_STYLES]
+        symbols.legend(handles=handles,loc='center',ncol=3,frameon=False)
+        legend = fig.add_subplot(grid[2,:]); legend.axis('off')
+        legend.legend(handles=[Patch(facecolor=colors[m],label=m) for m in methods],
+                      loc='center',ncol=5,frameon=False)
+    return fig
+
+BARSEQ_SECTION_STYLES = ((15, 's', '///'), (23, '^', '\\\\\\'), (27, 'D', 'xxx'))
+
+
+def validate_inputs(cases, fitted, scores, example_method, include_cosine=True, methods=None):
+    methods = METHODS if methods is None else tuple(methods)
+    lookup = {c['name']: c for c in cases}
+    for name in EXAMPLES:
+        if name not in lookup or example_method not in fitted.get(name, {}):
+            raise ValueError(f'Missing example map: {name}, {example_method}')
+    evaluation = [c for c in cases if c['role'] == 'evaluation']
+    for c in evaluation:
+        rows = scores[scores.case == c['name']]
+        if rows.method.duplicated().any() or set(rows.method) != set(methods):
+            raise ValueError(f'Incomplete method scores: {c["name"]}')
+        metrics = ['ccf_division_agreement' if c['task'] == 'natural' else 'positional_accuracy']
+        if include_cosine:
+            metrics.append('coverage_weighted_cosine')
+        if not np.isfinite(rows[metrics].to_numpy(dtype=float)).all():
+            raise ValueError(f'Nonfinite figure metrics: {c["name"]}')
+    return lookup
+
+
+def measurement_correspondences(reference, mapped_query, *, maximum=60, seed=1023):
+    """Mutual nearest neighbors within two reference spacings; no label filtering."""
+    from scipy.spatial import cKDTree
+    reference, mapped_query = np.asarray(reference), np.asarray(mapped_query)
+    if maximum < 1 or len(reference) < 2 or len(mapped_query) < 1:
+        raise ValueError('Need positive maximum and nonempty measurement arrays')
+    if not np.isfinite(reference).all() or not np.isfinite(mapped_query).all():
+        raise ValueError('Nonfinite measurement coordinates')
+    tree = cKDTree(reference)
+    spacing = float(np.median(tree.query(reference, k=2)[0][:, 1]))
+    if spacing <= 0:
+        raise ValueError('Nonpositive reference spacing')
+    distance, ref_index = tree.query(mapped_query)
+    reverse = cKDTree(mapped_query).query(reference)[1]
+    query_index = np.flatnonzero((reverse[ref_index] == np.arange(len(mapped_query))) & (distance <= 2*spacing))
+    eligible = len(query_index)
+    if eligible > maximum:
+        query_index = np.sort(np.random.default_rng(seed).choice(query_index, maximum, replace=False))
+    return dict(reference_index=ref_index[query_index], query_index=query_index,
+                eligible=eligible, shown=len(query_index), radius=2*spacing)
+
+
+def draw_measurement_links(ax, case, mapped, reference_colors, query_colors, *, title, maximum=60):
+    from matplotlib.collections import LineCollection
+    from matplotlib.colors import to_rgba_array
+    ref, query = case['reference_xy'], case['query_xy']
+    reference_colors = to_rgba_array(reference_colors)
+    query_colors = to_rgba_array(query_colors)
+    if len(reference_colors) == 1:
+        reference_colors = np.repeat(reference_colors, len(ref), axis=0)
+    if len(query_colors) == 1:
+        query_colors = np.repeat(query_colors, len(query), axis=0)
+    matches = measurement_correspondences(ref, mapped, maximum=maximum)
+    # Display original section geometries; the registered map determines pairs only.
+    width = max(np.ptp(ref[:, 0]), np.ptp(query[:, 0]), 1e-6)
+    shift = np.array([ref[:, 0].max()-query[:, 0].min()+.18*width, 0.])
+    right = query+shift
+    ax.scatter(*ref.T, s=3, c=reference_colors, alpha=.5, edgecolors='none', rasterized=True)
+    ax.scatter(*right.T, s=3, c=query_colors, alpha=.5, edgecolors='none', rasterized=True)
+    ri, qi = matches['reference_index'], matches['query_index']
+    if len(qi):
+        segments = np.stack([ref[ri], right[qi]], axis=1)
+        ax.add_collection(LineCollection(segments, colors='#666666', linewidths=.45, alpha=.3, zorder=1))
+        ax.scatter(*ref[ri].T, s=9, c=reference_colors[ri], edgecolors='black', linewidths=.2, zorder=3)
+        ax.scatter(*right[qi].T, s=9, c=query_colors[qi], edgecolors='black', linewidths=.2, zorder=3)
+    points = np.vstack([ref, right]); low, high = points.min(0), points.max(0)
+    padding = .04*max(np.ptp(points[:, 0]), np.ptp(points[:, 1]))
+    ax.set(title=title, aspect='equal', xticks=[], yticks=[],
+           xlim=(low[0]-padding, high[0]+padding), ylim=(high[1]+padding, low[1]-padding))
+    # Keep the allocated panel rectangle; pad data limits rather than shrinking axes.
+    ax.set_aspect('equal', adjustable='datalim')
+    ax.text(.02, .02, f'{matches["shown"]} / {matches["eligible"]} eligible links shown',
+            transform=ax.transAxes, fontsize=7, va='bottom',
+            bbox=dict(facecolor='white', edgecolor='none', alpha=.9))
+    ax.text(.02, 1.01, 'Reference', transform=ax.transAxes, fontsize=7)
+    ax.text(.98, 1.01, 'Query (original coordinates)', transform=ax.transAxes, ha='right', fontsize=7)
+
+
+def publication_figure(cases, fitted, scores, *, example_method='Splat rigid', include_cosine=False,
+                       measurement_links=False, maximum_links=60, methods=None):
+    import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+    from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+    roster = METHODS if methods is None else tuple(methods)
+    lookup = validate_inputs(cases, fitted, scores, example_method, include_cosine, methods=roster)
+    chosen = [lookup[name] for name in EXAMPLES]
+    UNANNOTATED = 'Unannotated'
+    if all('division_labels' in c for c in chosen[:2]):
+        labels = [c['division_labels'] for c in chosen[:2]]
+    else:
+        from paper.allen_ccf_diagnostics import load_hierarchy, region_labels
+        hierarchy = load_hierarchy()
+        labels = [[region_labels(x, hierarchy, 'division') for x in c['labels']] for c in chosen[:2]]
+    regions = sorted(set(np.concatenate([x for pair in labels for x in pair])) - {UNANNOTATED})
+    if len(regions) > 20:
+        raise ValueError('More than 20 divisions require an explicit palette')
+    palette = {r: plt.get_cmap('tab20')(i) for i, r in enumerate(regions)}
+    palette[UNANNOTATED] = '#bbbbbb'
+    colors = dict(zip(roster, ['#888888', '#3c78a8', '#c17a26', '#925f9e',
+                             '#bd83bd', '#d1495b', '#5c9a72', '#135f43', '#c35b16', '#186e85']))
+    if len(roster) > len(colors):
+        raise ValueError('Provide an explicit palette for more than ten methods')
+    with plt.rc_context({'font.family': 'sans-serif',
+                         'font.sans-serif': ['Arial', 'Helvetica', 'DejaVu Sans'],
+                         'font.size': 8, 'axes.titlesize': 9, 'axes.labelsize': 8,
+                         'pdf.fonttype': 42, 'ps.fonttype': 42}):
+        columns = 4 if include_cosine else 3
+        def panel_label(row, col):
+            index = row*columns+col
+            if measurement_links:
+                index -= min(row, 2)
+                if row < 2 and col >= 2:
+                    index -= 1
+            return chr(65+index)
+        fig = plt.figure(figsize=(17 if include_cosine else (11.5 if measurement_links else 13),
+                                  9 if measurement_links else 10), layout='constrained')
+        grid = fig.add_gridspec(5, columns, height_ratios=[1, 1, 1, .16, .16],
+                               width_ratios=[1, 1, 1.55, 1.55][:columns])
+        axes = np.array([[fig.add_subplot(grid[r, c]) for c in range(columns)] for r in range(3)])
+        if measurement_links:
+            # Let E/F share the full spatial block with a narrow internal gutter.
+            axes[2, 0].remove(); axes[2, 1].remove()
+            spatial_pair = grid[2, :2].subgridspec(1, 2, wspace=.02)
+            axes[2, 0] = fig.add_subplot(spatial_pair[0, 0])
+            axes[2, 1] = fig.add_subplot(spatial_pair[0, 1],
+                                       sharex=axes[2, 0], sharey=axes[2, 0])
+        titles = ['Allen: sections 29 to 28', 'Allen: combined distortion', 'BARseq: unequal coverage']
+        for row, case in enumerate(chosen):
+            ref, query = case['reference_xy'], case['query_xy']
+            mapped = fitted[case['name']][example_method]
+            points = np.vstack([ref, query, mapped])
+            low, high = points.min(0)-.012, points.max(0)+.012
+            if measurement_links and row == 2:
+                padding = max(.012, .05*float(np.ptp(points, axis=0).max()))
+                low, high = points.min(0)-padding, points.max(0)+padding
+            rc, qc = ([palette[x] for x in labels[row][0]], [palette[x] for x in labels[row][1]]) if row < 2 else ('#666666', '#168b8b')
+            if measurement_links and row < 2:
+                axes[row, 0].remove(); axes[row, 1].remove()
+                ax = fig.add_subplot(grid[row, :2])
+                panel = panel_label(row, 0)
+                draw_measurement_links(ax, case, mapped, rc, qc, maximum=maximum_links,
+                    title=f'{panel}  {titles[row]}\n{example_method}: inferred measurement correspondences')
+                continue
+            for col, xy in enumerate((query, mapped)):
+                ax = axes[row, col]
+                ax.scatter(*ref.T, s=3, c=rc, alpha=.65, edgecolors='none', rasterized=True)
+                ax.scatter(*xy.T, s=8, facecolors='none', edgecolors=qc, linewidths=.35, alpha=.8, rasterized=True)
+                stage = 'Before registration' if col == 0 else example_method
+                ax.set(title=f'{panel_label(row,col)}  {titles[row]}\n{stage}', aspect='equal',
+                       xlim=(low[0], high[0]), ylim=(high[1], low[1]), xticks=[], yticks=[])
+                if measurement_links:
+                    # Equal physical x/y scaling follows from box ratio = data ratio.
+                    # Disable data-aspect adjustment entirely: it must not recenter
+                    # or tighten the common before/after view during drawing/export.
+                    ax.set_aspect('auto')
+                    ax.set_box_aspect(float((high[1]-low[1])/(high[0]-low[0])))
+                    ax.set_anchor('N')
+                    ax.set_xlim(low[0], high[0])
+                    ax.set_ylim(high[1], low[1])
+                    ax.set_autoscale_on(False)
+        for row, task in enumerate(('natural', 'combined_distortion')):
+            metrics = ['ccf_division_agreement' if row == 0 else 'positional_accuracy']
+            if include_cosine:
+                metrics.append('coverage_weighted_cosine')
+            for col, metric in zip((2, 3), metrics):
+                ax = axes[row, col]
+                values = []
+                for j, (section, marker) in enumerate(((28, 'o'), (32, 'D'))):
+                    g = scores[(scores.dataset == 'Allen') & (scores.task == task) & (scores.section == section)]
+                    v = g.set_index('method').loc[list(roster), metric].to_numpy()
+                    values.extend(v)
+                    ax.scatter(v, np.arange(len(roster))+(j-.5)*.22, c=[colors[m] for m in roster], marker=marker, s=22)
+                ax.set_yticks(range(len(roster)), roster if col == 2 else ['']*len(roster))
+                ax.invert_yaxis()
+                limits = (-.02, 1.02)
+                if metric == 'ccf_division_agreement':
+                    limits = (max(0., min(.6, min(values)-.01)), min(1., max(.8, max(values)+.01)))
+                    ax.xaxis.set_major_locator(MultipleLocator(.05))
+                    ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+                label = {'ccf_division_agreement': 'CCF division agreement', 'positional_accuracy': 'Positional accuracy',
+                         'coverage_weighted_cosine': 'Coverage-weighted cosine'}[metric]
+                ax.set(xlim=limits, title=f'{panel_label(row,col)}  {label}', xlabel=label)
+                ax.grid(axis='x', alpha=.2)
+                ax.set_axisbelow(True)
+        follow = scores[(scores.dataset == 'BARseq') & (scores.role == 'evaluation')]
+        coverage_panels = [(2, 'positional_accuracy', 'Positional accuracy')]
+        if include_cosine:
+            coverage_panels.append((3, 'coverage_weighted_cosine', 'Coverage-weighted cosine'))
+        for col, metric, label in coverage_panels:
+            ax = axes[2, col]
+            for k, level in enumerate((1., .6, .2)):
+                for j, method in enumerate(roster):
+                    g = follow[(follow.method == method) & np.isclose(follow.shared_fraction, level)].sort_values(['section', 'direction'])
+                    if g.empty:
+                        raise ValueError(f'Missing BARseq group: {method}, {level}')
+                    step = min(.105, .84/len(roster))
+                    position = k+(j-(len(roster)-1)/2)*step
+                    ax.boxplot([g[metric].to_numpy()], positions=[position], widths=.085 if len(roster)<=8 else step*.8,
+                               manage_ticks=False, showfliers=False, patch_artist=True,
+                               boxprops=dict(facecolor=colors[method], alpha=.3),
+                               medianprops=dict(color=colors[method]))
+                    offsets = np.linspace(-.025, .025, len(g))
+                    for section, marker, hatch in BARSEQ_SECTION_STYLES:
+                        mask = g.section.to_numpy() == section
+                        ax.scatter(position+offsets[mask], g.loc[mask, metric], s=26,
+                                   marker=marker, c=colors[method], edgecolors='#333333',
+                                   linewidths=.35, hatch=hatch, zorder=3)
+            # Separate coverage groups without changing their shared metric scale.
+            for boundary in (.5, 1.5):
+                ax.axvline(boundary, color='#888888', linestyle=(0, (3, 3)),
+                           linewidth=.8, zorder=1)
+            ax.set_xticks(range(3), ['100%', '60%', '20%'])
+            ax.set(xlim=(-.5, 2.5), ylim=(-.02, 1.02), xlabel='Shared fraction of parent tissue',
+                   ylabel=label, title=f'{panel_label(2,col)}  {label}')
+            ax.grid(axis='y', alpha=.2)
+            ax.set_axisbelow(True)
+        symbols = fig.add_subplot(grid[3, :]); symbols.axis('off')
+        section_handles = [symbols.scatter([], [], marker=marker, s=48,
+                           facecolors='white', edgecolors='#333333', linewidths=.6,
+                           hatch=hatch, label=f'BARseq: section {section}')
+                           for section, marker, hatch in BARSEQ_SECTION_STYLES]
+        symbols.legend(handles=[
+            Line2D([], [], marker='o', linestyle='', color='#555555',
+                   label='Allen: both slices filled; BARseq: reference filled' if measurement_links else 'Spatial: reference filled'),
+            Line2D([], [], marker='o', linestyle='', color='#555555', markerfacecolor='none',
+                   label='BARseq overlays: query hollow' if measurement_links else 'Spatial: query hollow'),
+            Line2D([], [], marker='o', linestyle='', color='black', label='Allen: pair 28/29 or section 28'),
+            Line2D([], [], marker='D', linestyle='', color='black', label='Allen: pair 32/33 or section 32'),
+            *section_handles], loc='center', ncol=4, frameon=False)
+        legend = fig.add_subplot(grid[4, :]); legend.axis('off')
+        legend.legend(handles=[Patch(facecolor=colors[m], label=m) for m in roster],
+                      loc='center', ncol=5 if len(roster)>8 else 4, frameon=False)
+    return fig
